@@ -60,20 +60,6 @@ uint16_t rangeFinder( uint8_t placeholder )
 
 //=================================================
 
-double inverter ( double number )
-{
-  double inverted;
-
-  if (number > 0 )
-  {
-    inverted = 1 / InitialFanSpeed;
-    return inverted;
-  }
-  
-}
-
-//=================================================
-
 void result ()
 {
 
@@ -88,9 +74,9 @@ void result ()
     lcd.setCursor(4,1);
     lcd.print(sensorValue/10);
 
-    lcd.setCursor(7,1);
+    lcd.setCursor(8,1);
     lcd.print("DIS:");
-    lcd.setCursor(11,1);
+    lcd.setCursor(12,1);
     lcd.print(rangeFinder(1));
 
   }
@@ -137,7 +123,6 @@ void setup()
 
   ledcSetup(PWMChannel, PWMFreq, PWMResolution); // Fan Setup
   ledcAttachPin(FanInputPin, PWMChannel); // Fan Signal
-  ledcWrite(PWMChannel, 0 ); // Prevent Startup Full Speed
 
   ledcSetup(1, PWMFreq, PWMResolution); // Red Setup
   ledcAttachPin(RedInputPin, 1); // Red Signal
@@ -174,33 +159,35 @@ void loop()
 
   if (modeCounter % 2 == 0)   // Safety Mode
   {
-    ledcWrite(PWMChannel, analogRead(PotmeterInputPin) - (rangeFinder(1)) );
+    uint16_t slowDown = analogRead(PotmeterInputPin) - (((analogRead(PotmeterInputPin))/(rangeFinder(1)*100))*300);
 
-    if(rangeFinder(1) > 10)
+    if( rangeFinder(1) <= 2 )
     {
-      ledcWrite(1, 0); // Red Light
-      ledcWrite(2, 1000); // Green Light
-      ledcWrite(3, 0); // Blue Light
+      ledcWrite(PWMChannel, 0);
     }
-    else if (rangeFinder(1) <= 10 && rangeFinder(1) >= 5)
+    else
     {
-      ledcWrite(1, 400); // Red Light
-      ledcWrite(2, 600); // Green Light
-      ledcWrite(3, 0); // Blue Light
+      ledcWrite(PWMChannel, slowDown);
     }
-    else if (rangeFinder(1) <= 5 )
+
+    if( rangeFinder(1) >= 0 && rangeFinder(1) < 5 )
     {
       ledcWrite(1, 1000); // Red Light
       ledcWrite(2, 0); // Green Light
       ledcWrite(3, 0); // Blue Light
     }
-    else
+    else if ( rangeFinder(1) >= 5 && rangeFinder(1) <= 10 )
     {
-      ledcWrite(1, 0); // Red Light
-      ledcWrite(2, 0); // Green Light
+      ledcWrite(1, 550); // Red Light
+      ledcWrite(2, 500); // Green Light
       ledcWrite(3, 0); // Blue Light
     }
-
+    else if ( rangeFinder(1) > 10 )
+    {
+      ledcWrite(1, 0); // Red Light
+      ledcWrite(2, 1000); // Green Light
+      ledcWrite(3, 0); // Blue Light
+    }
 
   }
   else // Normal Operating Mode
